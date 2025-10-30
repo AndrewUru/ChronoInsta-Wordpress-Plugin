@@ -31,32 +31,71 @@ $api_url = add_query_arg(
     'https://www.instagram.com/api/v1/users/web_profile_info/'
 );
 
+$csrf_token = bin2hex(random_bytes(16));
+$ig_did = wp_generate_uuid4();
+$mid = strtoupper(bin2hex(random_bytes(8)));
+
+$cookie_header = 'csrftoken=' . $csrf_token . '; ';
+$cookie_header .= 'ig_did=' . $ig_did . '; ';
+$cookie_header .= 'mid=' . $mid . '; ';
+$cookie_header .= 'rur="NA"; ';
+
 $request_args = array(
     'timeout' => 12,
+    'httpversion' => '1.1',
     'headers' => array(
         'User-Agent'     => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
         'X-IG-App-ID'    => '936619743392459',
         'Accept'         => 'application/json',
         'Accept-Language'=> 'es-ES,es;q=0.9,en;q=0.8',
+        'Referer'        => $profile_url,
+        'Origin'         => 'https://www.instagram.com',
+        'X-Requested-With' => 'XMLHttpRequest',
+        'X-CSRFToken'    => $csrf_token,
+        'Cookie'         => $cookie_header,
+        'Sec-Fetch-Site' => 'same-origin',
+        'Sec-Fetch-Mode' => 'cors',
+        'Sec-Fetch-Dest' => 'empty',
     ),
 );
 
 $response = wp_remote_get($api_url, $request_args);
 
 if (is_wp_error($response)) {
-    wp_send_json(
-        array('error' => 'Error al conectar con Instagram.'),
-        502
-    );
+    $fallback_args = $request_args;
+    $fallback_args['sslverify'] = false;
+    $response = wp_remote_get($api_url, $fallback_args);
+
+    if (is_wp_error($response)) {
+        wp_send_json(
+            array('error' => 'Error al conectar con Instagram.'),
+            502
+        );
+    }
 }
 
 $status_code = wp_remote_retrieve_response_code($response);
 $body = wp_remote_retrieve_body($response);
 
 if ($status_code !== 200 || empty($body)) {
+    $api_error = json_decode($body, true);
+    $message = '';
+
+    if (is_array($api_error) && !empty($api_error['message'])) {
+        $message = $api_error['message'];
+    }
+
+    if (empty($message) && $status_code) {
+        $message = 'Instagram respondio con el codigo ' . $status_code;
+    }
+
+    if (empty($message)) {
+        $message = 'La respuesta de Instagram no es valida.';
+    }
+
     wp_send_json(
-        array('error' => 'La respuesta de Instagram no es valida.'),
-        502
+        array('error' => $message),
+        $status_code === 0 ? 502 : $status_code
     );
 }
 

@@ -3,7 +3,7 @@ Contributors: andres-tobon
 Tags: instagram, feed, shortcode
 Requires at least: 5.5
 Tested up to: 6.4
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,6 +46,10 @@ Asegurate de que el perfil es publico y de que el servidor puede realizar petici
 - Comprueba que el hosting permite solicitudes externas a Instagram, ya que algunos servidores bloquean conexiones salientes o requieren whitelists para llamadas HTTP.
 
 == Changelog ==
+= 1.3.2 =
+* Ajuste de cabeceras y cookies temporales para mejorar la compatibilidad con `web_profile_info` en servidores compartidos que bloquean las llamadas iniciales.
+* Mensajes de error mas descriptivos cuando Instagram devuelve codigos distintos de 200.
+
 = 1.3.1 =
 * Se reemplazo el scraping HTML por el endpoint `web_profile_info` para obtener imagenes de forma mas estable.
 * Las tarjetas enlazan directamente a la publicacion original cuando hay shortcode disponible.
