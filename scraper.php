@@ -26,6 +26,20 @@ if ($normalized_username === '') {
 }
 
 $profile_url = 'https://www.instagram.com/' . rawurlencode($normalized_username) . '/';
+
+$cache_key = 'chrono_insta_feed_' . md5($normalized_username);
+$cache_ttl = (int) apply_filters('chrono_insta_cache_ttl', 15 * MINUTE_IN_SECONDS);
+if ($cache_ttl < MINUTE_IN_SECONDS) {
+    $cache_ttl = MINUTE_IN_SECONDS;
+}
+$force_refresh = isset($_GET['refresh']) && $_GET['refresh'] === '1';
+$cached_payload = get_transient($cache_key);
+
+if ($cached_payload && !$force_refresh) {
+    $cached_payload['cached'] = true;
+    wp_send_json($cached_payload);
+}
+
 $api_url = add_query_arg(
     array('username' => $normalized_username),
     'https://www.instagram.com/api/v1/users/web_profile_info/'
@@ -93,6 +107,12 @@ if ($status_code !== 200 || empty($body)) {
         $message = 'La respuesta de Instagram no es valida.';
     }
 
+    if ($cached_payload) {
+        $cached_payload['cached'] = true;
+        $cached_payload['notice'] = $message;
+        wp_send_json($cached_payload);
+    }
+
     wp_send_json(
         array('error' => $message),
         $status_code === 0 ? 502 : $status_code
@@ -153,12 +173,14 @@ if (empty($images)) {
     );
 }
 
-wp_send_json(
-    array(
-        'profile' => array(
-            'username' => $normalized_username,
-            'url'      => $profile_url,
-        ),
-        'images'  => $images,
-    )
+$payload = array(
+    'profile' => array(
+        'username' => $normalized_username,
+        'url'      => $profile_url,
+    ),
+    'images'  => $images,
 );
+
+set_transient($cache_key, $payload, $cache_ttl);
+
+wp_send_json($payload);
