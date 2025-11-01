@@ -3,23 +3,23 @@ Contributors: andres-tobon
 Tags: instagram, feed, shortcode
 Requires at least: 5.5
 Tested up to: 6.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Muestra las ultimas imagenes publicas de un perfil de Instagram mediante un shortcode configurable.
 
 == Descripcion ==
-ChronoInsta renderiza un feed basico de Instagram a partir del nombre de usuario que definas en Ajustes > ChronoInsta. El plugin usa el archivo `scraper.php` para consultar el endpoint `web_profile_info` que Instagram expone en la web, obtiene el JSON del perfil y genera una cuadricula con las imagenes mas recientes mediante JavaScript. Es una alternativa rapida cuando no puedes usar la API oficial, pensada para sitios sencillos que solo necesitan mostrar imagenes recientes.
+ChronoInsta renderiza un feed basico de Instagram a partir del nombre de usuario que definas en Ajustes > ChronoInsta. El plugin consulta el endpoint web `web_profile_info` de Instagram y genera el HTML en el servidor, entregando las imagenes como etiquetas `<img>` tradicionales para evitar bloqueos CORS y peticiones `fetch` desde el navegador. El archivo `scraper.php` queda disponible como endpoint JSON opcional para integraciones externas o refrescos forzados.
 
-Al no depender de una API autenticada, el perfil debe ser publico y Instagram puede modificar el comportamiento del endpoint en cualquier momento. Para reducir el riesgo de bloqueos por exceso de peticiones, el resultado se cachea durante 15 minutos (valor configurable mediante filtro).
+Al no depender de una API autenticada, el perfil debe ser publico y Instagram puede modificar el comportamiento del endpoint en cualquier momento. Para reducir el riesgo de bloqueos por exceso de peticiones, el resultado se cachea durante 15 minutos (valor configurable mediante el filtro `chrono_insta_cache_ttl`).
 
 == Caracteristicas ==
 - Ajuste unico para definir el nombre de usuario del perfil de Instagram que se mostrara.
-- Shortcode `[chrono_insta_feed]` para incrustar el contenedor en cualquier entrada o pagina.
-- Carga asincrona de imagenes con JavaScript, placeholders de carga y mensajes de error amigables sin necesidad de tokens ni claves adicionales.
-- Diseno adaptable mediante un grid responsive con efectos hover y CTA configurable hacia el perfil.
-- Cache automatica con fallback para reutilizar la ultima respuesta valida si Instagram rechaza temporalmente nuevas solicitudes.
+- Shortcode `[chrono_insta_feed]` con soporte para el atributo `limit` (1 a 12) que controla cuantas imagenes se renderizan.
+- Renderizado en el servidor sin dependencias JavaScript y con estilos propios (`css/style.css`) para evitar rutas 404 desde el tema.
+- Cache automatica con fallback: si Instagram rechaza nuevas solicitudes se reutiliza la ultima respuesta valida e incluye un aviso.
+- Endpoint `scraper.php` opcional para consumir el JSON del feed o forzar un refresco remoto (`refresh=1`).
 
 == Instalacion ==
 1. Copia la carpeta `ChronoInsta` en `wp-content/plugins/`.
@@ -27,10 +27,11 @@ Al no depender de una API autenticada, el perfil debe ser publico y Instagram pu
 3. Visita Ajustes > ChronoInsta y guarda el nombre de usuario del perfil de Instagram que quieres mostrar.
 
 == Uso ==
-- Inserta el shortcode `[chrono_insta_feed]` en cualquier entrada, pagina o widget compatible con shortcodes.
-- Opcional: ajusta el estilo de las imagenes sobrescribiendo el selector `#chrono-insta-feed img` desde tu tema o CSS personalizado.
-- El archivo `js/carousel.js` incluye un ejemplo de carrusel automatico; encola el script desde tu tema si deseas usarlo con un contenedor que tenga la clase `chrono-insta-feed`.
-- Para forzar una actualizacion manual puedes llamar a `scraper.php?username=TU_USUARIO&refresh=1`; si Instagram responde con error, el plugin intentara devolver el cache previo.
+- Inserta el shortcode `[chrono_insta_feed]` en cualquier entrada, pagina o widget compatible.
+- Controla el numero de imagenes con `[chrono_insta_feed limit="6"]` (valor por defecto: 9).
+- Personaliza la apariencia sobrescribiendo los selectores `.chrono-insta-feed` o `.chrono-insta-card img` desde tu tema o CSS personalizado.
+- El archivo `js/carousel.js` incluye un ejemplo de carrusel automatico; puedes encolarlo manualmente desde tu tema si deseas usarlo con un contenedor que tenga la clase `chrono-insta-feed`.
+- Si necesitas una carga asincrona o placeholders, revisa `js/chrono-insta.js` como punto de partida y encola el script desde tu propio tema.
 
 == Preguntas frecuentes ==
 = Necesito una clave de API? =
@@ -39,14 +40,23 @@ No. El plugin consulta el endpoint web de Instagram y extrae las imagenes dispon
 = Por que no aparecen imagenes? =
 Asegurate de que el perfil es publico y de que el servidor puede realizar peticiones externas. Instagram puede modificar o limitar el endpoint web que usa el plugin; si ocurre y el cache caduca, tendras que adaptar el codigo o esperar a que se levante el bloqueo.
 
+= El navegador muestra 404 de output.css o styles.css =
+Esas rutas no pertenecen al plugin. Revisa tu tema o snippets personalizados y elimina llamadas como `wp_enqueue_style( 'output', get_stylesheet_directory_uri() . '/assets/css/output.css' )` o `wp_enqueue_style( 'custom', get_site_url() . '/styles.css' )`. Si necesitas mantenerlas, crea los archivos en la ruta correspondiente para que WordPress deje de marcar 404. ChronoInsta solo encola `wp-content/plugins/ChronoInsta/css/style.css`.
+
 == Notas tecnicas ==
-- `scraper.php` consulta la API publica `web_profile_info` de Instagram con cabeceras personalizadas y cabeceras de seguridad simulando un navegador real.
-- El JavaScript almacenado en `js/chrono-insta.js` consulta `scraper.php`, muestra placeholders mientras espera la respuesta y reemplaza el grid con imagenes cuando estan listas.
-- Los estilos se sirven desde `css/style.css`, que aplica el grid, animaciones de carga, CTA y feedback de errores.
+- `chrono_insta_fetch_feed_payload()` utiliza el endpoint `web_profile_info` de Instagram con cabeceras simulando un navegador real.
+- El HTML del feed se genera en el servidor y se entrega como parte del contenido del shortcode, evitando peticiones `fetch` del navegador y problemas CORS con `cdninstagram.com`.
+- `scraper.php` expone el mismo resultado en formato JSON para automatizaciones externas o para forzar un refresco (`refresh=1`).
+- Los estilos viven en `css/style.css`; el plugin ya no encola scripts por defecto.
 - El resultado se cachea mediante transients (15 minutos por defecto) y se puede personalizar con el filtro `chrono_insta_cache_ttl`.
-- Comprueba que el hosting permite solicitudes externas a Instagram, ya que algunos servidores bloquean conexiones salientes o requieren whitelists para llamadas HTTP.
 
 == Changelog ==
+= 1.5.0 =
+* El feed ahora se renderiza en el servidor para evitar fetch en el navegador y los bloqueos CORS asociados.
+* `scraper.php` reutiliza la nueva funcion interna y devuelve JSON consistente con el shortcode.
+* Se elimina el script por defecto; los ejemplos JavaScript quedan como opt-in manual.
+* Documentacion actualizada con recomendaciones para rutas CSS inexistentes.
+
 = 1.4.0 =
 * Se anadio cache con transients (15 minutos por defecto) para minimizar el riesgo de rate limits de Instagram; configurable mediante el filtro `chrono_insta_cache_ttl`.
 * Las respuestas devuelven datos almacenados si Instagram bloquea temporalmente la solicitud, junto con un aviso opcional.
@@ -69,3 +79,4 @@ Asegurate de que el perfil es publico y de que el servidor puede realizar petici
 
 == Notas de desarrollo ==
 - El plugin esta pensado para WordPress 5.0+ y PHP 7.4+.
+
