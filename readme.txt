@@ -3,7 +3,7 @@ Contributors: andres-tobon
 Tags: instagram, feed, shortcode
 Requires at least: 5.5
 Tested up to: 6.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,7 +50,10 @@ Esas rutas no pertenecen al plugin. Revisa tu tema o snippets personalizados y e
 - Los estilos viven en `css/style.css`; el plugin ya no encola scripts por defecto.
 - El resultado se cachea mediante transients (15 minutos por defecto) y se puede personalizar con el filtro `chrono_insta_cache_ttl`.
 
-== Changelog ==
+= 1.6.0 =
+* Se reubico el CSS en `assets/css/style.css` y se encola como `chrono-insta-style` para evitar referencias a scripts removidos.
+* No se encola JavaScript por defecto; cualquier script anterior debe eliminarse o hacerse opt-in manual.
+
 = 1.5.0 =
 * El feed ahora se renderiza en el servidor para evitar fetch en el navegador y los bloqueos CORS asociados.
 * `scraper.php` reutiliza la nueva funcion interna y devuelve JSON consistente con el shortcode.
@@ -79,4 +82,3 @@ Esas rutas no pertenecen al plugin. Revisa tu tema o snippets personalizados y e
 
 == Notas de desarrollo ==
 - El plugin esta pensado para WordPress 5.0+ y PHP 7.4+.
-

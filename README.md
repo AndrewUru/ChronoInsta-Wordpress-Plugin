@@ -11,5 +11,5 @@ ChronoInsta renderiza un feed basico de Instagram directamente en el servidor a 
 ## Extras
 
 - El endpoint `scraper.php` expone el mismo feed en JSON para integraciones externas (`?username=...&refresh=1` fuerza el refresco).
-- `css/style.css` controla el layout; personalizalo desde tu tema si necesitas un diseno distinto.
+- `assets/css/style.css` controla el layout; personalizalo desde tu tema si necesitas un diseno distinto.
 - Los archivos de la carpeta `js/` quedan como ejemplos opcionales y ya no se encolan automaticamente.

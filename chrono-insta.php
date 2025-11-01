@@ -3,8 +3,8 @@
  * Plugin Name: ChronoInsta
  * Plugin URI: https://tusitio.com/chrono-insta
  * Description: Muestra el feed de Instagram solo con el nombre de usuario o URL del perfil.
- * Version: 1.5.0
- * Author: Tu Nombre
+ * Version: 1.6.0
+ * Author: Andrés Tobío
  * Text Domain: chrono-insta
  */
 
@@ -331,7 +331,11 @@ add_shortcode('chrono_insta_feed', 'chrono_insta_shortcode');
 
 // Enqueue estilos del plugin.
 function chrono_insta_enqueue_assets() {
-    $version = '1.5.0';
-    wp_enqueue_style('chrono-insta-css', plugin_dir_url(__FILE__) . 'css/style.css', array(), $version);
+    wp_enqueue_style(
+        'chrono-insta-style',
+        plugin_dir_url(__FILE__) . 'assets/css/style.css',
+        array(),
+        '1.6'
+    );
 }
 add_action('wp_enqueue_scripts', 'chrono_insta_enqueue_assets');
