@@ -1,44 +1,34 @@
 <?php
-
-require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-load.php';
-
-header('Content-Type: application/json; charset=utf-8');
-
-$raw_username = '';
-if (isset($_GET['username'])) {
-    $raw_username = sanitize_text_field(wp_unslash($_GET['username']));
+if (!defined('ABSPATH')) {
+    exit;
 }
 
-if ($raw_username === '') {
-    wp_send_json(
-        array('error' => 'No se proporciono nombre de usuario.'),
+if (!class_exists('Chrono_Insta')) {
+    require_once plugin_dir_path(__FILE__) . 'chrono-insta.php';
+}
+
+$settings = Chrono_Insta::get_settings();
+
+$username = isset($_GET['username'])
+    ? Chrono_Insta::normalize_username(wp_unslash($_GET['username']))
+    : $settings['username'];
+
+$limit = isset($_GET['limit'])
+    ? Chrono_Insta::sanitize_limit($_GET['limit'])
+    : $settings['limit'];
+
+$refresh = !empty($_GET['refresh']);
+
+$result = Chrono_Insta::get_feed_items($username, $limit, $refresh);
+
+if (is_wp_error($result)) {
+    wp_send_json_error(
+        array(
+            'code' => $result->get_error_code(),
+            'message' => $result->get_error_message(),
+        ),
         400
     );
 }
 
-$force_refresh = isset($_GET['refresh']) && $_GET['refresh'] === '1';
-
-$payload = chrono_insta_fetch_feed_payload(
-    $raw_username,
-    array('force_refresh' => $force_refresh)
-);
-
-if (is_wp_error($payload)) {
-    $status = (int) $payload->get_error_data('status');
-
-    if ($status < 100) {
-        $status = 502;
-    }
-
-    wp_send_json(
-        array('error' => $payload->get_error_message()),
-        $status
-    );
-}
-
-if (empty($payload['profile']['username'])) {
-    $payload['profile']['username'] = chrono_insta_normalize_username($raw_username);
-}
-
-wp_send_json($payload);
-
+wp_send_json_success($result);
